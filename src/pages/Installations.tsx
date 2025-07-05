@@ -1,17 +1,23 @@
-
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import InstallationForm from '@/components/forms/InstallationForm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card, CardContent, CardHeader, CardTitle
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Calendar, User, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
+} from '@/components/ui/dialog';
+import {
+  Plus, Calendar, User, CheckCircle, Clock, AlertCircle, FileImage, Pencil
+} from 'lucide-react';
 
 const Installations = () => {
   const { installations } = useSelector((state: RootState) => state.installations);
   const [showForm, setShowForm] = useState(false);
+  const [selectedInstallation, setSelectedInstallation] = useState<any | null>(null);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -62,7 +68,11 @@ const Installations = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {installations.map((installation) => (
-          <Card key={installation.id} className="hover:shadow-lg transition-shadow">
+          <Card
+            key={installation.id}
+            onClick={() => setSelectedInstallation(installation)}
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+          >
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">
@@ -76,7 +86,7 @@ const Installations = () => {
                 </Badge>
               </div>
             </CardHeader>
-            
+
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center space-x-2">
@@ -97,35 +107,12 @@ const Installations = () => {
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${getChecklistProgress(installation.checklist)}%` }}
                   />
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">Checklist Items:</p>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {Object.entries(installation.checklist).map(([key, value]) => (
-                    <div key={key} className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full ${value ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      <span className={value ? 'text-green-700' : 'text-gray-500'}>
-                        {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {installation.notes && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">Notes:</p>
-                  <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                    {installation.notes}
-                  </p>
-                </div>
-              )}
             </CardContent>
           </Card>
         ))}
@@ -142,6 +129,56 @@ const Installations = () => {
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* 👉 Detailed View Modal */}
+      {selectedInstallation && (
+        <Dialog open={!!selectedInstallation} onOpenChange={() => setSelectedInstallation(null)}>
+          <DialogContent className="max-w-4xl overflow-y-auto max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Installation Details</DialogTitle>
+            </DialogHeader>
+
+            {/* View/Edit Form */}
+            <InstallationForm
+              data={selectedInstallation}
+              readOnly={false}
+              onClose={() => setSelectedInstallation(null)}
+            />
+
+            {/* Uploaded Images */}
+            <div className="mt-4">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Attached Documents / Images:</h3>
+              <div className="flex flex-wrap gap-3">
+                {selectedInstallation.images?.length > 0 ? (
+                  selectedInstallation.images.map((img: string, idx: number) => (
+                    <div key={idx} className="w-24 h-24 rounded overflow-hidden border border-gray-300">
+                      <img src={img} alt="upload" className="w-full h-full object-cover" />
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">No documents/images uploaded.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div className="mt-6 space-y-3">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Service History</h3>
+              <ul className="space-y-2">
+                {selectedInstallation.history?.map((event: any, idx: number) => (
+                  <li key={idx} className="border-l-2 border-blue-600 pl-4 relative">
+                    <span className="absolute top-0 left-[-6px] bg-blue-600 w-3 h-3 rounded-full" />
+                    <p className="text-xs text-gray-500">{new Date(event.date).toLocaleString()}</p>
+                    <p className="text-sm text-gray-700">{event.note}</p>
+                  </li>
+                )) || (
+                  <li className="text-sm text-gray-500">No history available.</li>
+                )}
+              </ul>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
